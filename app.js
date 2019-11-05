@@ -1,8 +1,12 @@
 const mongoose = require('mongoose')
 const express = require('express')
 const Schema = mongoose.Schema
+const cors = require('cors')
+
 const app = express()
 const jsonParser = express.json()
+
+app.use(cors())
 
 const postSchema = new Schema({
   headline: String,
@@ -22,7 +26,8 @@ app.get('/api/posts', function(req, res){
 
 	Post.find({}, function(err, posts){
 
-		if(err) return console.log(err)
+    if(err) return console.log(err)
+    console.log(`GET request | ${posts.length} returned`)
 		res.send(posts)
 	})
 })
@@ -32,7 +37,7 @@ app.get('/api/posts/:id', function(req, res){
   const id = req.params.id
 	Post.findOne({_id: id}, function(err, post){
 
-		if(err) return console.log(err)
+    if(err) return console.log(err)
     res.send(post)
 	})
 })
@@ -48,7 +53,7 @@ app.post('/api/posts', jsonParser, function (req, res) {
   post.save(function(err){
 		if(err) return console.log(err)
     res.send(post)
-    console.log(`New post was created: ${post}`)
+    console.log(`POST request | new post created`)
 	})
 })
 
@@ -59,7 +64,7 @@ app.delete('/api/posts/:id', function(req, res){
                
     if(err) return console.log(err)
     res.send(post)
-    console.log(`The post was deleted: ${post}`)
+    console.log('DELETE request | the post was deleted')
   })
 })
 
@@ -74,6 +79,6 @@ app.put('/api/posts/:id', jsonParser, function(req, res){
 	Post.findOneAndUpdate({_id: id}, newPost, {new: true}, function(err, post){
     if(err) return console.log(err)
     res.send(post)
-    console.log(`The post was updated: ${post}`)
+    console.log('PUT request | the post updated')
   })
 })
