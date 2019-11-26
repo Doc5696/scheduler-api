@@ -2,6 +2,7 @@ const mongoose = require('mongoose')
 const express = require('express')
 const Schema = mongoose.Schema
 const cors = require('cors')
+const CronJob = require('cron').CronJob
 
 const app = express()
 const jsonParser = express.json()
@@ -10,8 +11,10 @@ app.use(cors())
 
 const postSchema = new Schema({
   headline: String,
-  body: String
-}, {versionKey: false})
+  body: String,
+  date: String,
+  time: String,
+}, { versionKey: false })
 
 const Post = mongoose.model('Post', postSchema)
 
@@ -55,6 +58,36 @@ app.post('/api/posts', jsonParser, function (req, res) {
     res.send(post)
     console.log(`POST request | new post created`)
 	})
+})
+
+app.post('/api/schedule_posts', jsonParser, function (req, res) {
+
+  if(!req.body) return res.sendStatus(400)
+
+  const postContent = {
+    headline: req.body.headline,
+    body: req.body.body
+  }
+
+  const postTime = new Date(`${req.body.date.replace(/-/g, "/")} ${req.body.time}:00`)
+
+  console.log("TCL: postTime", postTime)
+
+  const post = new Post({
+    ...postContent
+  })
+
+  console.log(`POST request | new post scheduled`)
+
+  const job = new CronJob(postTime, function() {
+    post.save(function(err){
+      if(err) return console.log(err)
+      res.sendStatus(200)
+      console.log(`POST request | new post created`)
+    })
+  })
+
+  job.start()
 })
 
 app.delete('/api/posts/:id', function(req, res){
