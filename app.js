@@ -3,11 +3,19 @@ const express = require('express')
 const Schema = mongoose.Schema
 const cors = require('cors')
 const CronJob = require('cron').CronJob
+const socketIO = require('socket.io')
+const http = require('http')
 
 const app = express()
+
+const server = http.createServer(app)
+
 const jsonParser = express.json()
+const io = socketIO.listen(server)
 
 app.use(cors())
+
+global.io = io
 
 const postSchema = new Schema({
   headline: String,
@@ -20,10 +28,12 @@ const Post = mongoose.model('Post', postSchema)
 
 mongoose.connect('mongodb://localhost:27017/scheduler', { useNewUrlParser: true }, function(err){
 	if(err) return console.log(err)
-    app.listen(8000, function(){
+    server.listen(8000, function(){
       console.log(`Server is runing on port 8000`)
     })
 })
+
+io.on('connection', () => { /* … */ })
 
 app.get('/api/posts', function(req, res){
 
@@ -82,6 +92,7 @@ app.post('/api/schedule_posts', jsonParser, function (req, res) {
   const job = new CronJob(postTime, function() {
     post.save(function(err){
       if(err) return console.log(err)
+      global.io.emit('newPost', post)
       res.sendStatus(200)
       console.log(`POST request | new post created`)
     })
